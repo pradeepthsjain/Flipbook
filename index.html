@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Video Frame Extractor</title>
+</head>
+<body>
+    <h1>Video Frame Extractor</h1>
+    <input type="file" accept="video/*" id="videoInput">
+    <video id="video" style="display:none"></video>
+    <canvas id="canvas" style="display:none"></canvas>
+    <div id="frames"></div>
+
+    <script>
+        const videoInput = document.getElementById("videoInput");
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const framesContainer = document.getElementById("frames");
+        const ctx = canvas.getContext("2d");
+
+        videoInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                video.src = URL.createObjectURL(file);
+                video.load();
+                video.addEventListener("loadeddata", processVideo);
+            }
+        });
+
+        function processVideo() {
+            const targetFPS = 15; // Extract frames at 15 fps
+            const interval = 1 / targetFPS;
+            const frames = [];
+            let currentTime = 0;
+
+            video.play();
+            video.pause(); // Start paused for manual frame extraction
+
+            const extractFrames = () => {
+                if (currentTime >= video.duration) {
+                    console.log("All frames extracted!");
+                    return;
+                }
+
+                video.currentTime = currentTime;
+                video.onseeked = () => {
+                    // Draw current frame to canvas
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    // Create an image from canvas
+                    const img = document.createElement("img");
+                    img.src = canvas.toDataURL("image/png");
+                    framesContainer.appendChild(img); // Display frame
+                    frames.push(img.src); // Save frame data
+
+                    // Move to the next frame
+                    currentTime += interval;
+                    extractFrames();
+                };
+            };
+
+            extractFrames();
+        }
+    </script>
+</body>
+</html>
